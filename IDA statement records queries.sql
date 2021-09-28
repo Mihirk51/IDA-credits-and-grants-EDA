@@ -97,9 +97,10 @@ FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 Group by d.Region
 Order by 2 DESC;
+-- South Asia disbursed the most amount, followed by africa and latin america. This makes sense since these are developing regions
+
 
 -- Breaking things down by region (Which regions owe the most amount)
-
 SELECT d.Region, r.Due_to_IDA
 FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
@@ -111,11 +112,12 @@ Order by 2 DESC;
 SELECT sum(d.Disbursed_Amount) as Total_amount_disbursed, sum(r.Repaid_to_IDA) as Total_amount_repayed,  (sum(r.Repaid_to_IDA))/(sum(d.Disbursed_Amount))*100 as '%_still_remaining_to_be_paid'
 FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number; 
+-- 39% of the amount lent by IDA still needs to be repaid (wolrdwide)
 
--- Checking principal amount and cancelled amount and calculation percentage of amount that is cancelled
+
+-- Checking principal amount and cancelled amount and calculating percentage of amount that is cancelled
 -- Also, checking the average percentage of amount that has been cancelled
-
-SELECT `Original_Principal_Amount`, `Cancelled_Amount`
+SELECT `Original_Principal_Amount`, `Cancelled_Amount`, (Cancelled_Amount/Original_Principal_Amount)*100 as 'percentage_cancelled'
 FROM ida_disbursed;
 SELECT sum(`Original_Principal_Amount`) as total_principal_amount,sum(`Cancelled_Amount`) as total_cancelled_amount, (sum(`Cancelled_Amount`))/(sum(`Original_Principal_Amount`))* 100 as average_percentage_canacelled
 FROM ida_disbursed;
@@ -123,7 +125,6 @@ FROM ida_disbursed;
 
 
 -- The total amount disbursed by every country over time
-
 SELECT d.Country, r.Agreement_Signing_Date, d.Disbursed_Amount, 
 SUM(d.Disbursed_Amount) OVER (Partition by d.Country ORDER BY d.Country, r.Credit_Number) as Rolling_amount_disbursed
 FROM ida_disbursed as d
@@ -134,7 +135,7 @@ ON d.Credit_Number = r.Credit_Number;
 
 
 -- Checking the percentage of total disbursed amount sold to third party by each country
-
+-- Demonstrating the use of CTE
 WITH disbursed_to_3rd_party (Country, Agreement_Signing_Date, Sold_3rd_Party, Rolling_amount_disbursed,Rolling_amount_3rd_party)
 as
 (
@@ -150,7 +151,7 @@ FROM disbursed_to_3rd_party;
 
 
 -- Temp Table
-
+-- Demonstrating the use of temporary table
 DROP TABLE IF EXISTS PercentSoldTo3rdParty;
 CREATE TEMPORARY TABLE PercentSoldTo3rdParty(
 Country text,
@@ -178,6 +179,7 @@ SUM(r.Sold_3rd_Party) OVER (Partition by d.Country ORDER BY d.Country, r.Credit_
 FROM ida_disbursed as d
 JOIN ida_repayment_info as r
 ON d.Credit_Number = r.Credit_Number;
+-- To visualize the amount sold to third party by the country
 
 CREATE VIEW amount_due_region as
 SELECT d.Region, r.Due_to_IDA
@@ -186,6 +188,7 @@ INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 WHERE r.Due_to_IDA > 0
 Group by d.Region
 Order by 2 DESC;
+-- To visualize amount due group by region(different from countries)
 
 CREATE VIEW amount_disbursed_region as 
 SELECT d.Region, d.Disbursed_Amount
@@ -193,6 +196,7 @@ FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 Group by d.Region
 Order by 2 DESC;
+-- To visualize amount due group by region(different from countries)
 
 CREATE VIEW number_of_projects_country as
 SELECT d.Country, d.Disbursed_Amount, count("p.Project Name") as "Number of Projects", r.Due_to_IDA
@@ -200,12 +204,9 @@ FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 Group by d.Country
 Order by 4 DESC;
+-- To visualize number of proects by countires and the disbursed amount
 
-SELECT d.Country, r.Agreement_Signing_Date, SUM(d.Disbursed_Amount)
-FROM ida_disbursed as d
-JOIN ida_repayment_info as r
-ON d.Credit_Number = r.Credit_Number
-WHERE Country = 'India' and Agreement_Signing_Date LIKE '%2011%';
+
 
 
 
