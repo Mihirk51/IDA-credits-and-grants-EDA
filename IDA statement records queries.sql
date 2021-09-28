@@ -50,14 +50,19 @@ CREATE TABLE `ida_repayment_info` (
 SELECT Country,Original_Principal_Amount, Disbursed_Amount, Cancelled_Amount,  (Disbursed_Amount/Original_Principal_Amount)*100 as Actual_disbursed_percentage
 FROM ida_disbursed
 group by Country
-Order by 4;
+Order by 5 DESC;
+-- The following countries have disbursed more than what was orignally agreed upon
+-- Sao Tome and Principe,Grenada,Mozambique,Central Africa,Uzbekistan,Bhutan,St. Lucia,Eastern Africa,Georgia,Armenia,Mongolia,Tonga,Cambodia,Kyrgyz Republic,Albania,Eritrea,Angola,St. Kitts and Nevis,North Macedonia
 
 
 -- Shows what % of amount still needs to be repaid
 SELECT d.Country, d.Disbursed_Amount, r.Due_to_IDA, (r.Due_to_IDA/d.Disbursed_Amount)*100 as '% Amount to be repaid'
 FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
-Group by d.Country;
+Group by d.Country
+ORDER BY 4 DESC;
+-- The following countries need to repay more than the amount they have disbursed
+-- Zimbabwe,Lebanon,South Sudan
 
 -- Top 10 Countries that owe the most money to IDA as of recently
 SELECT d.Country, d.Disbursed_Amount, r.Due_to_IDA
@@ -66,19 +71,24 @@ INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 Group by d.Country
 Order by 3 DESC
 LIMIT 10;
+-- Lebanon,Iraq,South Sudan,Cambodia,Kyrgyz Republic,Fiji,Timor-Leste,Eritrea,Albania,Uzbekistan,
 
 -- Top 10 Countries that have the most number of projects
 SELECT Country, COUNT("Project Name") as "Number of Projects"
 FROM ida_disbursed
 GROUP BY Country
-ORDER BY 2 DESC;
+ORDER BY 2 DESC
+LIMIT 10;
+-- India,Bangladesh,Pakistan,Tanzania,Ghana,Senegal,Kenya,Ethiopia,Vietnam,Uganda
 
--- Seeing if the countries that owe the most have a high number of projects
+-- Seeing if the countries that have disbursed the most have a high number of projects
 SELECT d.Country, d.Disbursed_Amount, count("p.Project Name") as "Number of Projects", r.Due_to_IDA
 FROM ida_disbursed as d
 INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 Group by d.Country
-Order by 4 DESC;
+Order by 2 DESC;
+-- Apart from India, no one other country from the list above has disbursed the most amount. Therefore, number of projects doesnt correlate to the amount disbursed. 
+-- Hence proving causation doesnt mean corelation.
 
 
 -- Breaking things down by region (Which region disbured the most amount)
@@ -191,7 +201,11 @@ INNER JOIN ida_repayment_info as r on d.Credit_number = r.Credit_Number
 Group by d.Country
 Order by 4 DESC;
 
-
+SELECT d.Country, r.Agreement_Signing_Date, SUM(d.Disbursed_Amount)
+FROM ida_disbursed as d
+JOIN ida_repayment_info as r
+ON d.Credit_Number = r.Credit_Number
+WHERE Country = 'India' and Agreement_Signing_Date LIKE '%2011%';
 
 
 
